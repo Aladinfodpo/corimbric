@@ -26,8 +26,11 @@ class Piece{
       dy = buff;
     }
 
-    void draw(Canvas canvas){
-      canvas.drawRect(Rect.fromLTWH(x, y, dx, dy), Paint());
+    void draw(Canvas canvas, double zoom){
+      Paint darkPainter = Paint();
+      darkPainter.style = PaintingStyle.stroke;
+      darkPainter.strokeWidth = 3.0;
+      canvas.drawRect(Rect.fromLTWH(x*zoom, y*zoom, dx*zoom, dy*zoom), darkPainter);
       final textPainter = TextPainter(
         text: TextSpan(
           text: id.toString(),
@@ -39,7 +42,7 @@ class Piece{
         textDirection: TextDirection.ltr,
       )..layout();
 
-      textPainter.paint(canvas,Offset((x + dx * 0.5) - textPainter.width*0.5, (y + dy * 0.5) - textPainter.height*0.5));
+      textPainter.paint(canvas,Offset((x + dx * 0.5)*zoom - textPainter.width*0.5, (y + dy * 0.5)*zoom - textPainter.height*0.5));
     }
 }
 
@@ -64,8 +67,8 @@ class Box{
       return true;
     }
 
-    void draw(Canvas canvas){
-      canvas.drawRect(Rect.fromLTWH(x, y, dx, dy), Paint());
+    void draw(Canvas canvas, double zoom){
+      canvas.drawRect(Rect.fromLTWH(x*zoom, y*zoom, dx*zoom, dy*zoom), Paint());
     }
 }
 
@@ -94,11 +97,11 @@ class Camion{
     double calculEfficiency(){
       double sumArea = 0;
       for (var piece in pieces){ sumArea += piece.getArea(); }
-      return sumArea / (dx * longueur) * 100;
+      return longueur > 0 ? sumArea / (dx * longueur) * 100 : 100;
     }
 
     void sortPieces(List<Piece> inOutPieces, {int forceTransposePieceI = -1}){
-      inOutPieces.sort((Piece a, Piece b) {return a.getArea().compareTo(b.getArea()); });
+      inOutPieces.sort((Piece a, Piece b) {return -a.getArea().compareTo(b.getArea()); });
 
       int indexP = 0;
 
@@ -112,12 +115,14 @@ class Camion{
       }
     }
 
-    void draw(Canvas canvas){
+    void draw(Canvas canvas, double zoom){
       final redPainter = Paint();
+      redPainter.style = PaintingStyle.stroke;
+      redPainter.strokeWidth = 3.0;
       redPainter.color = Colors.red;
-      canvas.drawRect(Rect.fromLTWH(0, 0, dx, dy), redPainter);
+      canvas.drawRect(Rect.fromLTWH(0, 0, dx*zoom, dy*zoom), redPainter);
 
-      for (var p in pieces){ p.draw(canvas); }
+      for (var p in pieces){ p.draw(canvas, zoom); }
     }
 }
 
