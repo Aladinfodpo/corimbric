@@ -34,7 +34,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Piece> pieces = [Piece(1, 1, true, 1, others: 1)];
   Camion camion = Camion();
-  double zoom = 100;
+  double _currentScale = 1.0;
 
   static int currentId = 1;
 
@@ -58,8 +58,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     calculate();
     _controller.value = Matrix4.identity()
-    ..translate(100.0, 10.0)
-    ..scale(1.0);
+    ..translate(100.0, 20.0)
+    ..scale(_currentScale);
+
+    _controller.addListener(() {
+      final scale = _controller.value.getMaxScaleOnAxis();
+      setState(() {
+        _currentScale = scale;
+      });
+    });
   }
 
   @override
@@ -120,8 +127,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   ElevatedButton(onPressed: (){setState(() {
                     calculate();
                   });}, child: const Text("Calculer")),
-                  Text("Efficacité : ${camion.calculEfficiency().toStringAsFixed(0)}%"),
-                  Text("Longueur : ${camion.longueur.toStringAsFixed(1)}m")
+                  Text(camion.longueur == double.infinity ? "" : "Efficacité : ${camion.calculEfficiency().toStringAsFixed(0)}%"),
+                  Text(camion.longueur == double.infinity ? "" : "Longueur : ${camion.longueur.toStringAsFixed(1)}m")
                 ],
               ),
             ),
@@ -132,13 +139,13 @@ class _MyHomePageState extends State<MyHomePage> {
               child:
               InteractiveViewer(
                 transformationController: _controller,
-                boundaryMargin: EdgeInsets.only(left: 20 + camion.dx*50, right: 50, top: 20, bottom: camion.longueur * 100),
+                boundaryMargin: EdgeInsets.only(left: 20 + camion.dx*50, right: 50, top: 25, bottom: camion.longueur == double.infinity ? 0 : camion.longueur * 100),
                 minScale: 0.01,
                 maxScale: 5.0,
                 child: 
                 CustomPaint(
                     size: Size.infinite,
-                    painter: MyPainter(camion, zoom),
+                    painter: MyPainter(camion, _currentScale),
                 )
               )
             )
@@ -152,17 +159,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class MyPainter extends CustomPainter {
   final Camion camion;
-  final double zoom;
+  final double scale;
 
-  MyPainter(this.camion, this.zoom);
+  MyPainter(this.camion, this.scale);
 
   @override
   void paint(Canvas canvas, Size size) {
-    camion.draw(canvas, zoom);
+    camion.draw(canvas, scale);
   }
 
   @override
   bool shouldRepaint(covariant MyPainter oldDelegate) {
-    return oldDelegate.camion != camion;
+    return oldDelegate.camion != camion || oldDelegate.scale != scale;
   }
 }

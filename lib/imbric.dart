@@ -6,6 +6,7 @@ import 'user.dart';
 
 
 const eps = 0.0001;
+const zoom = 100.0;
 
 class Piece{
     double x = 0, y = 0, dx, dy;
@@ -14,11 +15,15 @@ class Piece{
     bool isMeter = true;
     int others = 0;
 
-    Piece(this.dx, this.dy, this.isTransposable, this.id, {this.isMeter = true, this.others = 0});
+    Piece(double inDx, double inDy, this.isTransposable, this.id, {this.isMeter = true, this.others = 0}): dx = isTransposable ? max(inDx, inDy) : inDx, dy = isTransposable ? min(inDx, inDy) : inDy;
     double getArea() { return dx * dy; }
 
     double getOut(double dim) { return isMeter ? dim : dim * 39.37; }
     String getOutString(double dim) { return "${getOut(dim)} ${isMeter ? "m" : "\""}"; }
+
+    Piece clone(){
+      return Piece(dx, dy, isTransposable, id, isMeter: isMeter, others: others);
+    }
 
     void transpose(){
       final buff = dx;
@@ -26,7 +31,7 @@ class Piece{
       dy = buff;
     }
 
-    void draw(Canvas canvas, double zoom){
+    void draw(Canvas canvas, double scale){
       Paint darkPainter = Paint();
       darkPainter.style = PaintingStyle.stroke;
       darkPainter.strokeWidth = 3.0;
@@ -43,6 +48,39 @@ class Piece{
       )..layout();
 
       textPainter.paint(canvas,Offset((x + dx * 0.5)*zoom - textPainter.width*0.5, (y + dy * 0.5)*zoom - textPainter.height*0.5));
+
+      if(dx * zoom * scale > 100 && dy * zoom * scale > 100){
+        final textDx = TextPainter(
+        text: TextSpan(
+          text: dx.toStringAsFixed(2),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textDx.paint(canvas, Offset((x + dx * 0.5) * zoom - textDx.width * 0.5, y * zoom + textDx.height * 0.1));
+
+      final textDy = TextPainter(
+        text: TextSpan(
+          text: dy.toStringAsFixed(2),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      
+      Offset offset = Offset((x + dx) * zoom -10, (y + dy * 0.5) * zoom);
+      canvas.save();
+      canvas.translate(offset.dx, offset.dy);
+      canvas.rotate(pi/2);
+      final textOffset = Offset(-textDy.width / 2, -textDy.height / 2);
+      textDy.paint(canvas,textOffset); 
+      canvas.restore();
+      }
     }
 }
 
@@ -67,7 +105,7 @@ class Box{
       return true;
     }
 
-    void draw(Canvas canvas, double zoom){
+    void draw(Canvas canvas, double scale){
       canvas.drawRect(Rect.fromLTWH(x*zoom, y*zoom, dx*zoom, dy*zoom), Paint());
     }
 }
@@ -107,7 +145,7 @@ class Camion{
 
       for (var piece in inOutPieces) {
           var remainX = dx / piece.dx;
-          var remainY = dy / piece.dy;
+          var remainY = dx / piece.dy;
           remainX = remainX - remainX.floor();
           remainY = remainY - remainY.floor();
 
@@ -115,14 +153,60 @@ class Camion{
       }
     }
 
-    void draw(Canvas canvas, double zoom){
+    void draw(Canvas canvas, double scale){
       final redPainter = Paint();
       redPainter.style = PaintingStyle.stroke;
       redPainter.strokeWidth = 3.0;
       redPainter.color = Colors.red;
-      canvas.drawRect(Rect.fromLTWH(0, 0, dx*zoom, dy*zoom), redPainter);
 
-      for (var p in pieces){ p.draw(canvas, zoom); }
+      if(longueur == 0 || longueur == double.infinity){
+        final textPainter = TextPainter(
+        text: TextSpan(
+          text: longueur == 0 ? "Ajouter des palettes pour calculer" : "Impossible de faire tout rentrer",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      textPainter.paint(canvas,Offset(20, 200));        
+      }else{
+        canvas.drawRect(Rect.fromLTWH(0, 0, dx*zoom, longueur*zoom), redPainter);
+
+        for (var p in pieces){ p.draw(canvas, scale); }
+
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: "$dx m",
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 16,
+            ),
+          ),
+            textDirection: TextDirection.ltr,
+        )..layout();
+        textPainter.paint(canvas,Offset(dx * 0.5 * zoom - textPainter.width * 0.5, -textPainter.height * 1.2)); 
+
+        final textPainterDy = TextPainter(
+          text: TextSpan(
+            text: "$longueur m",
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 16,
+            ),
+          ),
+            textDirection: TextDirection.ltr,
+        )..layout();
+        Offset offset = Offset(10.0 + dx * zoom + textPainterDy.height*0.1, longueur * zoom * 0.5 );
+        canvas.save();
+        canvas.translate(offset.dx, offset.dy);
+        canvas.rotate(pi/2);
+        final textOffset = Offset(-textPainter.width / 2, -textPainter.height / 2);
+        textPainterDy.paint(canvas,textOffset); 
+        canvas.restore();
+      }
     }
 }
 
@@ -183,16 +267,23 @@ class Imbric{
     }
 
     static bool bestFit(Camion c, List<Piece> inPieces){
-      Camion bestC = c;
-      bool res = Imbric.fit(bestC, inPieces);
-
-      for (int iPiece = 0; iPiece <= inPieces.length && res && User().deepFit; iPiece++) {
-          Camion c2 = c;
-          Imbric.fit(c2, inPieces, forceTransposePieceI: iPiece);
-          if (c2.longueur < bestC.longueur){ bestC = c2; }
+      Camion bestC = Camion(dx: c.dx, dy: c.dy);
+      bestC.longueur = double.infinity;
+      bool res = false;
+ 
+      for (int iPiece = -1; iPiece <= inPieces.length && (iPiece < 0 || User().deepFit); iPiece++) {
+          Camion c2 = Camion(dx: c.dx, dy: c.dy);
+          if (Imbric.fit(c2, inPieces.map((Piece p) => p.clone()).toList(), forceTransposePieceI: iPiece) && c2.longueur < bestC.longueur){ 
+            bestC = c2; 
+            res = true;
+          }
       }
 
-      c = bestC;
+      c.pieces = bestC.pieces;
+      c.longueur = bestC.longueur;
+      c.boxesVides = bestC.boxesVides;
+      c.boxes = bestC.boxes;
+
       return res;
     }
 }
