@@ -48,6 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
   double _currentScale = 1.0;
 
   static int currentId = 1;
+  bool fullscreen = false;
 
   final TransformationController _controller = TransformationController();
 
@@ -91,88 +92,112 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(height: 300,
-            child: Card(
-                  child: 
-                  Padding(
-                    padding: EdgeInsets.all(4.0),
-                    child :
-                      SingleChildScrollView(
-                      child:
-                      DataTable(
-                        columnSpacing: 8.0,
-                        columns: [
-                          DataColumn(label: Center(child: Text('Largeur'), )),
-                          DataColumn(label: Center(child: Text('Longueur'))),
-                          DataColumn(label: Center(child: Text('    '))),
-                          DataColumn(label: Center(child: Text('Nombre'))),
-                          DataColumn(label: Center(child: Text('Id'))),
-                          DataColumn(label: Center(child: Text('Tournable'))),
-                          DataColumn(label: Center(child: IconButton(onPressed: (){setState(() {
-                            pieces.add(Piece(1, 1, true, ++currentId, isMeter: User().isMeter, others: 1));
-                          });}, icon: Icon(Icons.add)))),
-                        ],
-                        rows: List.generate(pieces.length, (index) => DataRow(
-                          cells: [
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dx.toString(), onChanged: (value) => pieces[index].dx = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dy.toString(), onChanged: (value) => pieces[index].dy = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
-                            DataCell(Center(child: DropdownButton<String>(items: ["m", "\""].map<DropdownMenuItem<String>>((String value) {
-                               return DropdownMenuItem<String>(value: value, child: Text(value));
-                            }).toList(), value: ["m", "\""][pieces[index].isMeter ? 0 : 1], onChanged: (String? value){setState((){pieces[index].isMeter = value! == "m";});}))),
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].others.toString(), onChanged: (value) => pieces[index].others = int.tryParse(value) ?? 1, textAlign: TextAlign.center,))),
-                            DataCell(Center(child: Text(pieces[index].id.toString()))),
-                            DataCell(Center(child: Checkbox(value: pieces[index].isTransposable, onChanged:(value) => setState(() {
-                              pieces[index].isTransposable = value!;
-                            }),))),
-                            DataCell(Center(child: IconButton(icon: Icon(Icons.delete), onPressed:() => setState(() {
-                              pieces.removeAt(index);
-                            }),))),
-                          ],
+      body: Center( child: 
+        OrientationBuilder(
+          builder: (context, orientation) {
+            return Flex( 
+            direction: orientation == Orientation.portrait ? Axis.vertical : Axis.horizontal,
+            children: [ Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(height: fullscreen ? 0 : 270,
+                child: Card(
+                      child: 
+                      Padding(
+                        padding: EdgeInsets.all(0.0),
+                        child :
+                          SingleChildScrollView(
+                          child:
+                          DataTable(
+                            columnSpacing: 8.0,
+                            columns: [
+                              DataColumn(label: Center(child: Text('Largeur'), )),
+                              DataColumn(label: Center(child: Text('Longueur'))),
+                              DataColumn(label: Center(child: Text('    '))),
+                              DataColumn(label: Center(child: Text('Nombre'))),
+                              DataColumn(label: Center(child: Text('Id'))),
+                              DataColumn(label: Center(child: Text('Tournable'))),
+                              DataColumn(label: Center(child: IconButton(onPressed: (){setState(() {
+                                pieces.add(Piece(1, 1, true, ++currentId, isMeter: User().isMeter, others: 1));
+                              });}, icon: Icon(Icons.add)))),
+                            ],
+                            rows: List.generate(pieces.length, (index) => DataRow(
+                              cells: [
+                                DataCell(Center(child: TextFormField(initialValue: pieces[index].dx.toString(), onChanged: (value) => pieces[index].dx = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
+                                DataCell(Center(child: TextFormField(initialValue: pieces[index].dy.toString(), onChanged: (value) => pieces[index].dy = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
+                                DataCell(Center(child: DropdownButton<String>(items: ["m", "\""].map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(value: value, child: Text(value));
+                                }).toList(), value: ["m", "\""][pieces[index].isMeter ? 0 : 1], onChanged: (String? value){setState((){pieces[index].isMeter = value! == "m";});}))),
+                                DataCell(Center(child: TextFormField(initialValue: pieces[index].others.toString(), onChanged: (value) => pieces[index].others = int.tryParse(value) ?? 1, textAlign: TextAlign.center,))),
+                                DataCell(Center(child: Text(pieces[index].id.toString()))),
+                                DataCell(Center(child: Checkbox(value: pieces[index].isTransposable, onChanged:(value) => setState(() {
+                                  pieces[index].isTransposable = value!;
+                                }),))),
+                                DataCell(Center(child: IconButton(icon: Icon(Icons.delete), onPressed:() => setState(() {
+                                  pieces.removeAt(index);
+                                }),))),
+                              ],
+                            )
+                            ),
+                          )
                         )
-                        ),
                       )
+                  )
+                ),
+                Card(
+                  margin: EdgeInsets.all(0),
+                  child: 
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      ElevatedButton(
+                        style: ButtonStyle(
+                          padding: MaterialStateProperty.all(EdgeInsets.all(6.0)), // remove internal padding
+                          minimumSize: MaterialStateProperty.all(Size.zero),   // remove min size constraint
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,     // avoid extra padding for tap area
+                          elevation: MaterialStateProperty.all(2.0),
+                        ),
+                        onPressed: (){setState(() {
+                        calculate();
+                      });}, child: const Text("Calculer")),
+                      Text(camion.longueur == double.infinity ? "" : "Efficacité: ${camion.calculEfficiency().toStringAsFixed(0)}%"),
+                      Text(camion.longueur == double.infinity ? "" : "Longueur: ${camion.getOutString(camion.longueur, precision: 1)}"),
+                      IconButton(onPressed: (){setState(() {
+                        fullscreen = !fullscreen;
+                      });}, icon: Icon(Icons.fullscreen)),
+                      IconButton(onPressed: (){Navigator.pushNamed(context, SettingsPage.routeName, ).then((res) {if(res != null && res as bool) {setState(calculate);}});}, icon: Icon(Icons.settings)),
+                    ],
+                  ),
+                ),],
+                ),
+                Expanded(child:
+                Column(children: [
+                  
+                Expanded(
+                  child:
+                Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child:
+                  InteractiveViewer(
+                    transformationController: _controller,
+                    boundaryMargin: EdgeInsets.only(left: 20 + camion.dx*50, right: 50, top: 25, bottom: camion.longueur == double.infinity ? 0 : camion.longueur * 100),
+                    minScale: 0.01,
+                    maxScale: 5.0,
+                    child: 
+                    CustomPaint(
+                        size: Size.infinite,
+                        painter: MyPainter(camion, _currentScale),
                     )
                   )
-              )
-            ),
-            Card(child: 
-              Row(
-                spacing: 10,
-                children: [
-                  ElevatedButton(onPressed: (){setState(() {
-                    calculate();
-                  });}, child: const Text("Calculer")),
-                  Text(camion.longueur == double.infinity ? "" : "Efficacité: ${camion.calculEfficiency().toStringAsFixed(0)}%"),
-                  Text(camion.longueur == double.infinity ? "" : "Longueur: ${camion.getOutString(camion.longueur, precision: 1)}"),
-                  IconButton(onPressed: (){Navigator.pushNamed(context, SettingsPage.routeName, ).then((res) {if(res as bool) {setState(calculate);}});}, icon: Icon(Icons.settings))
-                ],
-              ),
-            ),
-            Expanded(
-              child:
-            Padding(
-              padding: EdgeInsets.all(4.0),
-              child:
-              InteractiveViewer(
-                transformationController: _controller,
-                boundaryMargin: EdgeInsets.only(left: 20 + camion.dx*50, right: 50, top: 25, bottom: camion.longueur == double.infinity ? 0 : camion.longueur * 100),
-                minScale: 0.01,
-                maxScale: 5.0,
-                child: 
-                CustomPaint(
-                    size: Size.infinite,
-                    painter: MyPainter(camion, _currentScale),
                 )
-              )
-            )
-            ),
-          ],
-        ),
-      ),
+                ),
+                ])
+                )
+              ],
+            );
+            } )
+          ),
     );
   }
 }

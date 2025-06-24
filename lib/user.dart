@@ -48,6 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final largeurController = TextEditingController(text: (User().isMeter ? User().largeur : User().largeur * 39.37).toString());
   final longueurController = TextEditingController(text: (User().isMeter ? User().longueur : User().longueur * 39.37).toString());
   bool isMeter = User().isMeter;
+  bool deepFit = User().deepFit;
 
   bool isSaving = false;
   _SettingsPageState();
@@ -114,6 +115,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(["m", "\""][isMeter ? 0 : 1])
                 ]
               ),
+              Row(
+                children: <Widget>[
+                  SizedBox(width: 100, child:
+                  const Text("Brute force :")),
+                  Checkbox(value: deepFit, onChanged: (value){setState((){deepFit = value!;});})
+                ]
+              ),
               SizedBox(height: 20),
               Padding(
                 padding: EdgeInsets.only(left: 60.0, right: 60.0,),
@@ -125,6 +133,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       User().largeur = double.parse(largeurController.text);
                       User().longueur = double.parse(longueurController.text);
                       User().isMeter = isMeter;
+                      User().deepFit = deepFit;
                       setState(() { isSaving = true; }); 
                       await User().save();
                       setState(() { isSaving = false; }); 
