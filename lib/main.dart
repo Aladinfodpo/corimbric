@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'imbric.dart';
+import 'user.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  User().loadFromData(prefs);
   runApp(const MyApp());
 }
+
+var routePages = {
+      '/' : (BuildContext context) => MyHomePage(title: 'Coratech Imbric'),
+      SettingsPage.routeName: (BuildContext context) => SettingsPage(),
+    };
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -13,11 +24,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Coratech Imbric',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Coratech Imbric'),
+      routes: routePages,
     );
   }
 }
@@ -32,7 +43,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Piece> pieces = [Piece(1, 1, true, 1, others: 1)];
+  List<Piece> pieces = [Piece(1, 1, true, 1, isMeter: User().isMeter, others: 1)];
   Camion camion = Camion();
   double _currentScale = 1.0;
 
@@ -49,7 +60,11 @@ class _MyHomePageState extends State<MyHomePage> {
         palettes.add(Piece(piece.dx, piece.dy, piece.isTransposable, piece.id, isMeter: piece.isMeter, others: piece.others));
       }
     }
-    Imbric.bestFit(camion, palettes);
+    if(!Imbric.bestFit(camion, palettes) || camion.longueur == 0){
+      _controller.value = Matrix4.identity()
+    ..translate(100.0, 20.0)
+    ..scale(1.0);
+    }
   }
 
   @override
@@ -89,22 +104,26 @@ class _MyHomePageState extends State<MyHomePage> {
                       SingleChildScrollView(
                       child:
                       DataTable(
-                        columnSpacing: 18.0,
+                        columnSpacing: 8.0,
                         columns: [
                           DataColumn(label: Center(child: Text('Largeur'), )),
                           DataColumn(label: Center(child: Text('Longueur'))),
+                          DataColumn(label: Center(child: Text('    '))),
                           DataColumn(label: Center(child: Text('Nombre'))),
                           DataColumn(label: Center(child: Text('Id'))),
                           DataColumn(label: Center(child: Text('Tournable'))),
                           DataColumn(label: Center(child: IconButton(onPressed: (){setState(() {
-                            pieces.add(Piece(1, 1, true, ++currentId, others: 1));
+                            pieces.add(Piece(1, 1, true, ++currentId, isMeter: User().isMeter, others: 1));
                           });}, icon: Icon(Icons.add)))),
                         ],
                         rows: List.generate(pieces.length, (index) => DataRow(
                           cells: [
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dx.toString(), onChanged: (value) => pieces[index].dx = double.tryParse(value) ?? 0,))),
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dy.toString(), onChanged: (value) => pieces[index].dy = double.tryParse(value) ?? 0,))),
-                            DataCell(Center(child: TextFormField(initialValue: pieces[index].others.toString(), onChanged: (value) => pieces[index].others = int.tryParse(value) ?? 1,))),
+                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dx.toString(), onChanged: (value) => pieces[index].dx = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
+                            DataCell(Center(child: TextFormField(initialValue: pieces[index].dy.toString(), onChanged: (value) => pieces[index].dy = double.tryParse(value) ?? 0, textAlign: TextAlign.center,))),
+                            DataCell(Center(child: DropdownButton<String>(items: ["m", "\""].map<DropdownMenuItem<String>>((String value) {
+                               return DropdownMenuItem<String>(value: value, child: Text(value));
+                            }).toList(), value: ["m", "\""][pieces[index].isMeter ? 0 : 1], onChanged: (String? value){setState((){pieces[index].isMeter = value! == "m";});}))),
+                            DataCell(Center(child: TextFormField(initialValue: pieces[index].others.toString(), onChanged: (value) => pieces[index].others = int.tryParse(value) ?? 1, textAlign: TextAlign.center,))),
                             DataCell(Center(child: Text(pieces[index].id.toString()))),
                             DataCell(Center(child: Checkbox(value: pieces[index].isTransposable, onChanged:(value) => setState(() {
                               pieces[index].isTransposable = value!;
@@ -122,13 +141,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Card(child: 
               Row(
-                spacing: 20,
+                spacing: 10,
                 children: [
                   ElevatedButton(onPressed: (){setState(() {
                     calculate();
                   });}, child: const Text("Calculer")),
-                  Text(camion.longueur == double.infinity ? "" : "Efficacité : ${camion.calculEfficiency().toStringAsFixed(0)}%"),
-                  Text(camion.longueur == double.infinity ? "" : "Longueur : ${camion.longueur.toStringAsFixed(1)}m")
+                  Text(camion.longueur == double.infinity ? "" : "Efficacité: ${camion.calculEfficiency().toStringAsFixed(0)}%"),
+                  Text(camion.longueur == double.infinity ? "" : "Longueur: ${camion.getOutString(camion.longueur, precision: 1)}"),
+                  IconButton(onPressed: (){Navigator.pushNamed(context, SettingsPage.routeName, ).then((res) {if(res as bool) {setState(calculate);}});}, icon: Icon(Icons.settings))
                 ],
               ),
             ),

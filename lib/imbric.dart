@@ -19,10 +19,10 @@ class Piece{
     double getArea() { return dx * dy; }
 
     double getOut(double dim) { return isMeter ? dim : dim * 39.37; }
-    String getOutString(double dim) { return "${getOut(dim)} ${isMeter ? "m" : "\""}"; }
+    String getOutString(double dim) { return "${getOut(dim).toStringAsFixed(2)} ${isMeter ? "m" : "\""}"; }
 
     Piece clone(){
-      return Piece(dx, dy, isTransposable, id, isMeter: isMeter, others: others);
+      return Piece(isMeter ? dx : dx / 39.37, isMeter ? dy : dy / 39.37, isTransposable, id, isMeter: isMeter, others: others);
     }
 
     void transpose(){
@@ -52,7 +52,7 @@ class Piece{
       if(dx * zoom * scale > 100 && dy * zoom * scale > 100){
         final textDx = TextPainter(
         text: TextSpan(
-          text: dx.toStringAsFixed(2),
+          text: getOutString(dx),
           style: TextStyle(
             color: Colors.black,
             fontSize: 16,
@@ -64,7 +64,7 @@ class Piece{
 
       final textDy = TextPainter(
         text: TextSpan(
-          text: dy.toStringAsFixed(2),
+          text: getOutString(dy),
           style: TextStyle(
             color: Colors.black,
             fontSize: 16,
@@ -118,7 +118,7 @@ class Camion{
     List<Piece> pieces = [];
 
     double getOut(double dim) { return User().isMeter ? dim : dim * 39.37; }
-    String getOutString(double dim) { return "${getOut(dim)} ${User().isMeter ? "m" : "\""}"; }
+    String getOutString(double dim, {int precision = 2}) { return "${getOut(dim).toStringAsFixed(precision)} ${User().isMeter ? "m" : "\""}"; }
 
     Camion({this.dx = 0, this.dy = 0}){
       dx = (dx == 0) ? User().largeur : dx;
@@ -179,7 +179,7 @@ class Camion{
 
         final textPainter = TextPainter(
           text: TextSpan(
-            text: "$dx m",
+            text: getOutString(dx),
             style: TextStyle(
               color: Colors.red,
               fontSize: 16,
@@ -191,7 +191,7 @@ class Camion{
 
         final textPainterDy = TextPainter(
           text: TextSpan(
-            text: "$longueur m",
+            text: getOutString(longueur),
             style: TextStyle(
               color: Colors.red,
               fontSize: 16,

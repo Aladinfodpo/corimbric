@@ -26,6 +26,8 @@ class User {
 
   Future<void> save() async {
     final pref = await SharedPreferences.getInstance();
+    largeur = isMeter ? largeur : largeur / 39.37;
+    longueur = isMeter ? longueur : longueur / 39.37;
     pref.setDouble("largeur", largeur);
     pref.setDouble("longueur", longueur);
     pref.setBool("isMeter", isMeter);
@@ -34,16 +36,18 @@ class User {
 }
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, this.onCancel});
+  const SettingsPage({super.key});
+
+  static const String routeName = "settings";
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
-  final Function? onCancel;
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final largeurController = TextEditingController(text: User().largeur.toString());
-  final longueurController = TextEditingController(text: User().longueur.toString());
+  final largeurController = TextEditingController(text: (User().isMeter ? User().largeur : User().largeur * 39.37).toString());
+  final longueurController = TextEditingController(text: (User().isMeter ? User().longueur : User().longueur * 39.37).toString());
+  bool isMeter = User().isMeter;
 
   bool isSaving = false;
   _SettingsPageState();
@@ -60,61 +64,92 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return 
-    Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const Text("Largeur :"),
-                Expanded(child:
-                Padding(padding: EdgeInsets.symmetric(horizontal: 20.0), child: 
-                TextField(
-                  controller: longueurController,
-                ),)
-                ),
-              ]
-            ),
-            Row(
-              children: <Widget>[
-                const Text("Longueur :"),
-                Expanded(child:
-                Padding(padding: EdgeInsets.symmetric(horizontal: 20.0), child: 
-                TextField(
-                  controller: longueurController,
-                ),)
-                ),
-              ]
-            ),
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.only(left: 60.0, right: 60.0,),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-              ElevatedButton(
-                onPressed: () async {
-                  if(!isSaving){
-                    User().largeur = double.parse(largeurController.text);
-                    User().longueur = double.parse(longueurController.text);
-                    setState(() { isSaving = true; }); 
-                    await User().save();
-                    setState(() { isSaving = false; }); 
-                  }
-                },
-                child: isSaving ? CircularProgressIndicator() : const Text("Sauvegarder") ,
+    Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text("Paramètres"),
+      ),
+      body:
+      Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  SizedBox(width: 100, child:
+                  const Text("Largeur :")),
+                  SizedBox(width: 100, child:
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 20.0), child: 
+                  TextField(
+                    textAlign: TextAlign.center,
+                    controller: largeurController,
+                  ),)
+                  ),
+                  DropdownButton<String>(items: ["m", "\""].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(value: value, child: Text(value));
+                  }).toList(), value: ["m", "\""][isMeter ? 0 : 1], onChanged: (String? value){setState((){
+                    isMeter = value! == "m";
+                    if(isMeter){
+                      largeurController.text = (double.parse(largeurController.text)/39.37).toStringAsFixed(2);
+                      longueurController.text = (double.parse(longueurController.text)/39.37).toStringAsFixed(2);
+                    }else{
+                      largeurController.text = (double.parse(largeurController.text)*39.37).toStringAsFixed(2);
+                      longueurController.text = (double.parse(longueurController.text)*39.37).toStringAsFixed(2);
+                    }
+                    });})
+                ]
               ),
-              Spacer(),
-              ElevatedButton(
-                onPressed: (){
-                    widget.onCancel?.call();
-                },
-                child: const Text("Annuler"),
+              Row(
+                children: <Widget>[
+                  SizedBox(width: 100, child:
+                  const Text("Longueur :")),
+                  SizedBox(width: 100, child:
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 20.0), child: 
+                  TextField(
+                    textAlign: TextAlign.center,
+                    controller: longueurController,
+                  ),)
+                  ),
+                  Text(["m", "\""][isMeter ? 0 : 1])
+                ]
               ),
-              ]),
-            )
-          ],
-        )
+              SizedBox(height: 20),
+              Padding(
+                padding: EdgeInsets.only(left: 60.0, right: 60.0,),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    if(!isSaving){
+                      User().largeur = double.parse(largeurController.text);
+                      User().longueur = double.parse(longueurController.text);
+                      User().isMeter = isMeter;
+                      setState(() { isSaving = true; }); 
+                      await User().save();
+                      setState(() { isSaving = false; }); 
+
+                       if (mounted && Navigator.canPop(context)){
+                        Navigator.pop(context, true);
+                       }
+                    }
+                  },
+                  child: isSaving ? CircularProgressIndicator() : const Text("Sauvegarder") ,
+                ),
+                Spacer(),
+                ElevatedButton(
+                  onPressed: (){
+                      if (Navigator.canPop(context)){
+                        Navigator.pop(context, false);
+                      }
+                  },
+                  child: const Text("Annuler"),
+                ),
+                ]),
+              )
+            ],
+          )
+      )
     );
   }
 }
