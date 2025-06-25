@@ -116,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               DataColumn(label: Center(child: Text('Largeur'), )),
                               DataColumn(label: Center(child: Text('Longueur'))),
                               DataColumn(label: Center(child: Text('    '))),
-                              DataColumn(label: Center(child: Text('Nombre'))),
+                              DataColumn(label: Center(child: Text('Nb'))),
                               DataColumn(label: Center(child: Text('Id'))),
                               DataColumn(label: Center(child: Text('Tournable'))),
                               DataColumn(label: Center(child: IconButton(onPressed: (){setState(() {
@@ -152,11 +152,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 Column(children: [
                   SizedBox(
                   width: 300,
-                  height: 60,
+                  height: 72,
                   child: Card(
                       margin: EdgeInsets.all(0),
                       child: 
-                      Column(children:[
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children:[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         spacing: 20,
