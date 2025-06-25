@@ -102,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 SizedBox(height: fullscreen ? 0 : 270,
+                width: fullscreen ? 0 : null,
                 child: Card(
                       child: 
                       Padding(
@@ -145,36 +146,41 @@ class _MyHomePageState extends State<MyHomePage> {
                       )
                   )
                 ),
-                Card(
-                  margin: EdgeInsets.all(0),
-                  child: 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 10,
-                    children: [
-                      ElevatedButton(
-                        style: ButtonStyle(
-                          padding: MaterialStateProperty.all(EdgeInsets.all(6.0)), // remove internal padding
-                          minimumSize: MaterialStateProperty.all(Size.zero),   // remove min size constraint
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,     // avoid extra padding for tap area
-                          elevation: MaterialStateProperty.all(2.0),
-                        ),
-                        onPressed: (){setState(() {
-                        calculate();
-                      });}, child: const Text("Calculer")),
-                      Text(camion.longueur == double.infinity ? "" : "Efficacité: ${camion.calculEfficiency().toStringAsFixed(0)}%"),
-                      Text(camion.longueur == double.infinity ? "" : "Longueur: ${camion.getOutString(camion.longueur, precision: 1)}"),
-                      IconButton(onPressed: (){setState(() {
-                        fullscreen = !fullscreen;
-                      });}, icon: Icon(Icons.fullscreen)),
-                      IconButton(onPressed: (){Navigator.pushNamed(context, SettingsPage.routeName, ).then((res) {if(res != null && res as bool) {setState(calculate);}});}, icon: Icon(Icons.settings)),
-                    ],
-                  ),
-                ),],
+                ],
                 ),
                 Expanded(child:
                 Column(children: [
-                  
+                  SizedBox(
+                  width: 300,
+                  height: 60,
+                  child: Card(
+                      margin: EdgeInsets.all(0),
+                      child: 
+                      Column(children:[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 20,
+                        children: [
+                          Text(camion.longueur == double.infinity ? "" : "Efficacité: ${camion.calculEfficiency().toStringAsFixed(0)}%"),
+                          Text(camion.longueur == double.infinity ? "" : "Longueur: ${camion.getOutString(camion.longueur, precision: 1)}"),
+                        ]),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 20,
+                          children: [
+                          ElevatedButton(
+                            onPressed: (){setState(() {
+                            calculate();
+                          });}, child: const Text("Calculer")),
+                          IconButton(onPressed: (){setState(() {
+                            fullscreen = !fullscreen;
+                          });}, icon: Icon(Icons.fullscreen)),
+                          IconButton(onPressed: (){Navigator.pushNamed(context, SettingsPage.routeName, ).then((res) {if(res != null && res as bool) {setState(calculate);}});}, icon: Icon(Icons.settings)),
+                        ],
+                      ),
+                      ])
+                    )
+                  ),  
                 Expanded(
                   child:
                 Padding(
